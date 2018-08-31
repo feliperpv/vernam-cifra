@@ -1,11 +1,16 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package cifravernam;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -16,88 +21,130 @@ public class CifraVernam {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         
-        CifraVernam cifraVernam = new CifraVernam();
+        BufferedReader buff = 
+                new BufferedReader(new InputStreamReader(System.in));
         
-        String msg = "hello";
-        String chave = cifraVernam.keyGen(msg.length());
-        String encrypted = cifraVernam.encrypt(msg, chave);
-        String decrypted = cifraVernam.decrypt(encrypted, chave);
+        String texto = "";
+        String str = null;
+        try{
+            while ((str = buff.readLine()) != null) {
+                texto = texto + str + "\r\n";
+            }
+        } catch(IOException e){
+            e.printStackTrace();
+        }
         
-        System.out.println(msg);
-        System.out.println(chave);
-        System.out.println(encrypted);
-        System.out.println(decrypted);
+        
+        String type = args[0];
+        String file = args[1];
+        //String texto = "HELLO WORLD ISSO É SÓ UM TEXTO FILHO";
+        
+        //String type = "d";
+        //String file = "chave.dat";
+        File chaveFile = new File(file);
+        
+        texto = removeAcento(texto);       
+        
+        if(type.equalsIgnoreCase("c")){
+            
+            String chave = keyGen(texto.length(), chaveFile);
+            String encrypted = encrypt(texto, chave);
+            System.out.println(encrypted);
+            
+        } else if(type.equalsIgnoreCase("d")){
+            
+            String decrypted = decrypt(texto, chaveFile);
+            System.out.println(decrypted);
+            
+        } else {
+            System.out.println("Operação '" + type + "' inválido");
+        }
         
     }
     
-    public String keyGen(int tamanho){
+    public static String keyGen(int tamanho, File file) throws FileNotFoundException, IOException{
         
-        byte[] bytes = new byte[tamanho];
-        char[] chave = new char[tamanho];
+        if (tamanho <= 0){
+            return null;
+        }
+        
+        byte[] data = new byte[tamanho];
         
         Random random =  new Random();
-        
-        random.nextBytes(bytes);
-        
         for(int i=0; i<tamanho; i ++){
-            chave[i] = (char) random.nextInt(132);
+            data[i] = (byte) random.nextInt(126);
         }
                 
-        //return new String(bytes);
-        return new String(chave);
+        if(file.exists()){
+            file.delete();
+        }
         
+        FileOutputStream f = new FileOutputStream(file);
+        f.write(data);
+        f.close();
+        
+        return new String(data, StandardCharsets.UTF_8);
     }
 
-    public String encrypt(String msg, String chave) {
+    public static String encrypt(String msg, String chave) throws FileNotFoundException, IOException {
 
-        if (msg.length() != chave.length()) {
+        if (msg.length() < chave.length()) {
+            return "O tamanho do texto e da chave devem ser iguais";
+        }
+        
+        byte[] im = msg.getBytes();
+        byte[] ik = chave.getBytes();
+        byte[] data = new byte[msg.length()];
+        
+        for (int i = 0; i < msg.length(); i++) {
+            data[i] = (byte) (im[i] ^ ik[i]);
+        }
+        
+        return new String(data);
+    }
+
+    public static String decrypt(String msg, File file) throws FileNotFoundException {
+        
+        if(!file.exists()){
+            return "Arquivo '" + file.getName() + "' não existe!";
+        }
+        
+        BufferedReader buff = 
+                new BufferedReader(new FileReader(file));
+        
+        String chave = "";
+        String str = null;
+        try{
+            while ((str = buff.readLine()) != null) {
+                chave = chave + str;
+            }
+        } catch(IOException e){
+            e.printStackTrace();
+        }        
+        
+        if(msg.length() < chave.length()) {
             return "O tamanho do texto e da chave devem ser iguais";
         }
 
-        int[] im = charArrayToInt(msg.toCharArray());
-        int[] ik = charArrayToInt(chave.toCharArray());
-        int[] data = new int[msg.length()];
-
+        byte[] im = msg.getBytes();
+        byte[] ik = chave.getBytes();
+        byte[] data = new byte[msg.length()];
+        
         for (int i = 0; i < msg.length(); i++) {
-            data[i] = im[i] ^ ik[i];
+            data[i] = (byte) (im[i] ^ ik[i]);
         }
 
-        return new String(intArrayToChar(data));
-    }
-
-    public String decrypt(String msg, String chave) {
-        if (msg.length() != chave.length()) {
-            return "O tamanho do texto e da chave devem ser iguais";
-        }
-
-        int[] im = charArrayToInt(msg.toCharArray());
-        int[] ik = charArrayToInt(chave.toCharArray());
-        int[] data = new int[msg.length()];
-
-        for (int i = 0; i < msg.length(); i++) {
-            data[i] = im[i] ^ ik[i];
-        }
-
-        return new String(intArrayToChar(data));
+        return new String(data);
 
     }
-
-    private int[] charArrayToInt(char[] c) {
-        int[] i = new int[c.length];
-        for (int j = 0; j < c.length; j++) {
-            i[j] = (int) c[j];
-        }
-        return i;
+    
+    public static String removeAcento(String str) {
+        
+        String nfdNormalizedString = Normalizer.normalize(str, Normalizer.Form.NFD); 
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        
+        return pattern.matcher(nfdNormalizedString).replaceAll("");
     }
-
-    private char[] intArrayToChar(int[] i) {
-        char[] c = new char[i.length];
-        for (int j = 0; j < i.length; j++) {
-            c[j] = (char) i[j];
-        }
-        return c;
-    }
-
 }
