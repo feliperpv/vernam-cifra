@@ -1,0 +1,8 @@
+C:\Users\Cliente\Desktop\CifraVernam\src
+javac CifraVernam.java
+
+java CifraVernam c chave.dat < t.txt > r.txt
+
+java CifraVernam d chave.dat > t.txt < r.txt
+
+xeVf{i=P501kDI?JXGCV9ZQK[8(pZj&zb99]6R9&Soc?JDc0%trJbn1T.T7GWM]8e=B.&D=I5%Q7#8o{v,e[d2K!Zgo{zJ9dX4%>Kl>$eke]PSG>Pe4d$Id<,Y5FU!z8X*t6ks1Wgzp{-oj1JrH$x,fda1wXdF1W6X%E-+ds\HJRs6XUwx.hU[oNM(b-7xw&{H/,HjK@#4?G.:Sse/$?@#=bN%$zLqd9EV?eZk;zM5n!DSI6$HEDBTSD*\PC6CYD
